@@ -319,9 +319,9 @@ while True:
             elif '!minecraft' in cht['msg'].lower()and myMaster == cht['id']:
                 minecraft = not minecraft
                 if minecraft:
-                        client.ChatSend('Minecrafting time!')
-                    else:
-                        client.ChatSend('Minecrafting stopped.')
+                    client.ChatSend('Minecrafting time!')
+                else:
+                    client.ChatSend('Minecrafting stopped.')
 
             elif '!toggle' in cht['msg'].lower() and myMaster == cht['id']:
                 attack = not attack
