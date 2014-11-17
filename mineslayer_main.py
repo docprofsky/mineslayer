@@ -64,6 +64,7 @@ eventMsgs = {'join': 'JOINED!!!',
 targetPlayer = True
 playerToTarget = 'docprofsky'
 silentStart = True
+minecraft = False
 
 
 class ninjaClient:
@@ -271,8 +272,12 @@ while True:
     client.sio.wait(0.001)
     clock.tick(0)
 
-    client.Fire()
-    client.DropMine()
+    if attack:
+        client.Fire()
+
+    if minecraft:
+        client.DropMine()
+
     if len(chatLog) > chatIdx:
         cht = chatLog[chatIdx]
         if cht['type'] == 'system':
@@ -302,8 +307,21 @@ while True:
                 attack = False
                 client.ChatSend(
                     'Phasers set to Stun! Consider yourself lucky, mines!')
-                #attack = True
-                #client.ChatSend('Theres no disabling me!')
+                # attack = True
+                # client.ChatSend('Theres no disabling me!')
+
+            elif '!monitor' in cht['msg'].lower()and myMaster == cht['id']:
+                attack = False
+                minecraft = False
+                client.ChatSend(
+                    'Phasers set to Stun! Consider yourself lucky, mines!')
+
+            elif '!minecraft' in cht['msg'].lower()and myMaster == cht['id']:
+                minecraft = not minecraft
+                if minecraft:
+                        client.ChatSend('Minecrafting time!')
+                    else:
+                        client.ChatSend('Minecrafting stopped.')
 
             elif '!toggle' in cht['msg'].lower() and myMaster == cht['id']:
                 attack = not attack
@@ -450,15 +468,15 @@ while True:
 
     if not o_numMines == numMines and o_numMines - 1 == numMines:
         deadMines += 1
-        #client.ChatSend(str(datetime.datetime.now())+' | Killed: '+str(deadMines))
-        #client.ChatSend(str(numMines)+' Left!')
+        # client.ChatSend(str(datetime.datetime.now())+' | Killed: '+str(deadMines))
+        # client.ChatSend(str(numMines)+' Left!')
 
         if updates:
             client.ChatSend('1 mine down! {0} left to go. This makes a total of {1} mines disarmed! {2}'.format(
                 numMines, deadMines, datetime.datetime.now()))
 
     window.fill(THECOLORS['white'])
-    #screen = pygame.transform.flip(screen, 180, 180)
+    # screen = pygame.transform.flip(screen, 180, 180)
     window.blit(screen, (5, 5))
     window.blit(font.render(
         '# of mines disarmed:' + str(deadMines), 1, THECOLORS['black']), (420, 5))
