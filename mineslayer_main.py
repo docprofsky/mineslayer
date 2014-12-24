@@ -1,5 +1,4 @@
 import sys
-sys.path.append('C:\Python27\Lib\site-packages')
 
 import logging
 import time
@@ -14,6 +13,8 @@ from pygame.color import THECOLORS
 
 from functools import partial
 import datetime
+
+import ninjanode_client
 
 # logging.basicConfig(level=logging.DEBUG)    #ENABLE THIS AT YOUR OWN
 # RISK!!! FLOODS THE CONSOLE WITH ALL TRANSMITTED/RECIEVED PACKETS!
@@ -66,170 +67,6 @@ playerToTarget = 'docprofsky'
 silentStart = True
 
 
-class ninjaClient:
-
-    """
-    Contains all the stuff needed for socketIO and a few random other things
-    """
-    class EventHandler(socketIO_client.BaseNamespace):
-
-        """
-        Handles events from socketIO
-        """
-
-        def on_connect(self):
-            # When we connect to the server. Simply print a debug message to
-            # console
-            print "connected."
-
-        def on_disconnect(self):
-            global myMaster
-            print "DISCONNECTED!"  # When we get forcefully disconnected.
-            if reconnect:  # if we want to reconnect, try it
-                client.Connect()
-
-        # wheb we recieve new information about player positions
-        def on_pos(self, data):
-            global playerDat  # make sure the variable is global
-            # iterate through all the keys in the rcieved data
-            for k in data.keys():
-                if playerDat.has_key(k):
-                    # if the player is already in the system, only overwrite
-                    # the changes
-                    playerDat[k]['pos'].update(data[k])
-                else:
-                    # otherwise, overwrite it all!
-                    playerDat[k]['pos'] = data[k]
-
-        def on_chat(self, data):  # when new data arrives from the chat system
-            chatLog.append(data)  # add that data to the que
-
-        def on_shipstat(self, data):  # recieved info on ships
-            global playerDat  # globalize all the things!
-
-            for k in data.keys():  # iterate through keys in recv'd data
-
-                if playerDat.has_key(k):
-                    # if the player is already in the system, only overwrite
-                    # the changes
-                    playerDat[k].update(data[k])
-                else:
-                    playerDat[k] = data[k]  # otherwise, overwrite it all!
-                # If the player needs tobe removed from memory
-                if data[k]['status'] == 'destroy':
-                    playerDat.pop(k)
-
-        def on_projstat(self, data):  # updates on projectiles status
-            for k in data.keys():
-                # if the projectile is being created
-                if data[k]['status'] == 'create':
-                    if projectiles.has_key(k):
-                        # if the projectile is already in the system, only
-                        # overwrite the changes
-                        projectiles[k].update(data[k])
-                    else:
-                        # otherwise, overwrite it all!
-                        projectiles[k] = data[k]
-                else:
-                    projectiles.pop(k)  # If we're not creating it, destroy it!
-
-        def on_projpos(self, data):  # on position update of projectiles
-            for k in data.keys():  # write new data to the dict
-                projectiles[k].update(data[k])
-
-        # This is only called once, on login, it gives data on PNBITS
-        def on_pnbitsstat(self, data):
-            global pnbData
-            pnbData = data  # just copy the data into a global variable
-
-    def getClosest(self, coord, projectiles):
-        """
-        returns closest coordinate to a coordinate (coord) from the list of coordinates (projectiles)
-        """
-        dist = lambda s, d: (s[0] - d[0]) ** 2 + (s[1] - d[
-            1]) ** 2  # a little function which calculates the distance between two coordinates
-        pos = []  # clear the local list of positions
-        for k in projectiles.keys():
-            if projectiles[k].has_key('cssClass'):  # if this is a planet
-                # add the coordinates in a (0,0) fashion
-                pos.append(
-                    (200 - int(-projectiles[k]['pos']['x'] / 50), 200 - int(-projectiles[k]['pos']['y'] / 50)))
-            elif projectiles[k]['weaponID'] == 1:  # or if this is a mine
-                # add the coordinates in a (0,0) fashion
-                pos.append(
-                    (200 - int(-projectiles[k]['pos']['x'] / 50), 200 - int(-projectiles[k]['pos']['y'] / 50)))
-        try:
-            return min(pos, key=partial(dist, coord))
-        except ValueError:
-            return coord
-
-    def GetName(self, key):
-        try:
-            return playerDat[key]['name']
-        except:
-            return ''
-
-    def GetKey(self, name):
-        try:
-            for k in playerDat.keys():
-                if playerDat[k]['name'] == name:
-                    return k
-        except BaseException as er:
-            return ''
-
-    def __init__(self, name="docprofsky"):
-        self.sio = socketIO_client.SocketIO(
-            'ninjanode.tn42.com', 80, self.EventHandler)
-        self.sio.timeout_in_seconds = 0.001
-        self.ShipInfo = {'status': "create",
-                         'name': name,
-                         'style': "c"}
-
-    def Connect(self):
-        global firstConnect
-        self.sio.emit('shipstat', self.ShipInfo)
-        self.sio.wait(0.001)
-        firstConnect = True
-
-    def MoveForward(self, state):
-        self.sio.emit('key', {'s': int(state), 'c': "u"})
-        self.sio.wait(0.001)
-
-    def MoveBackward(self, state):
-        self.sio.emit('key', {'s': int(state), 'c': "d"})
-        self.sio.wait(0.001)
-
-    def MoveLeft(self, state):
-        self.sio.emit('key', {'s': int(state), 'c': "l"})
-        self.sio.wait(0.001)
-
-    def MoveRight(self, state):
-        self.sio.emit('key', {'s': int(state), 'c': "r"})
-        self.sio.wait(0.001)
-
-    def DropMine(self):
-        self.sio.emit('key', {'s': 1, 'c': "s"})
-        self.sio.wait(0.001)
-        self.sio.emit('key', {'s': 0, 'c': "s"})
-        self.sio.wait(0.001)
-
-    def Fire(self):
-        self.sio.emit('key', {'s': 1, 'c': "f"})
-        self.sio.wait(0.001)
-        self.sio.emit('key', {'s': 0, 'c': "f"})
-        self.sio.wait(0.001)
-
-    def MoveDegrees(self, deg, state):
-        self.sio.emit('key', {'c': 'm',
-                              's': state,
-                              'd': deg})
-        self.sio.wait(0.001)
-
-    def ChatSend(self, msg):
-        self.sio.emit('chat', {'msg': str(msg)})
-        self.sio.wait(0.001)
-
-
 def GetAngle(p1, p2):
     xDiff = p2[0] - p1[0]
     yDiff = p2[1] - p1[1]
@@ -247,12 +84,12 @@ def GetNextPos(angle, posX, posY, velX, velY, length, sec=1):
     return (X, Y)
 
 if len(sys.argv) == 3:
-    client = ninjaClient(sys.argv[1])
+    client = ninjanode_client.ninjanodeClient(sys.argv[1])
     playerToTarget = sys.argv[2]
 elif len(sys.argv) == 2:
-    client = ninjaClient(sys.argv[1])
+    client = ninjanode_client.ninjanodeClient(sys.argv[1])
 else:
-    client = ninjaClient('!docprofsky')
+    client = ninjanode_client.ninjanodeClient('!docprofsky')
 
 client.Connect()
 
