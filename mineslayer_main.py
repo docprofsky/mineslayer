@@ -29,7 +29,15 @@ updates = True  # if this is true, then we say statistics ingame
 # This is true if this is the first time connecting to the server
 firstConnect = False
 projectiles = {}  # dict storing all data about projectiles
-playerDat = {'d': 0}  # dict storing all data about players
+playerDat = {'d': {'name': 'not-real',
+                         'pos': {'d': 169,
+                                 'x': 2370,
+                                 'y': -238},
+                         'score': {'deaths': 0, 'kills': 0},
+                         'shieldStyle': 'blue',
+                         'sounds': [2, 4],
+                         'status': 'create',
+                         'style': 'f'}}  # dict storing all data about players
 pnbData = {}  # dict storing planet data
 # list that stores a log of all the chat events that have happened.
 chatLog = []
@@ -92,11 +100,12 @@ elif len(sys.argv) == 2:
     client = ninjanode_client.ninjanodeClient(sys.argv[1], reconnect)
 else:
     client = ninjanode_client.ninjanodeClient('!docprofsky', reconnect)
+print playerToTarget
 
-client.Connect()
+client.connect()
 
 if not silentStart:
-    client.ChatSend(
+    client.chat_send(
         'I am a bot written by Roger . My one goal is to obliterate the mines placed by the oppressors. ')
 
 pygame.init()
@@ -113,13 +122,14 @@ while True:
     chatLog = client.chatLog
     pnbData = client.pnbData
     playerDat = client.playerDat
+    projectiles = client.projectiles
 
-    client.Fire()
-    client.DropMine()
+    client.fire()
+    client.drop_mine()
     if len(chatLog) > chatIdx:
         cht = chatLog[chatIdx]
         if cht['type'] == 'system':
-            print client.GetName(cht['id']), '|', eventMsgs[cht['action']]
+            print client.get_name(cht['id']), '|', eventMsgs[cht['action']]
 
             if firstConnect:
                 playerDat.pop(ourID)
@@ -127,23 +137,23 @@ while True:
                 firstConnect = False
 
         elif cht['type'] == 'chat':
-            print client.GetName(cht['id']), 'SAYS:', cht['msg']
+            print client.get_name(cht['id']), 'SAYS:', cht['msg']
             if '!info' in cht['msg'].lower():
-                client.ChatSend(
+                client.chat_send(
                     'I am a bot written by Roger . My one goal is to obliterate the mines placed by the oppressors.')
 
             elif '!setcontroltome' in cht['msg'].lower():
                 if len(myMaster) == 0:
-                    client.ChatSend('Control set to {0} ({1})! We shall forever be in your service!'.format(
-                        client.GetName(cht['id']), cht['id']))
+                    client.chat_send('Control set to {0} ({1})! We shall forever be in your service!'.format(
+                        client.get_name(cht['id']), cht['id']))
                     myMaster = cht['id']
             elif '!enable' in cht['msg'].lower()and myMaster == cht['id']:
                 attack = True
-                client.ChatSend('Phasers set to Kill! Mines, watch out!')
+                client.chat_send('Phasers set to Kill! Mines, watch out!')
 
             elif '!disable' in cht['msg'].lower()and myMaster == cht['id']:
                 attack = False
-                client.ChatSend(
+                client.chat_send(
                     'Phasers set to Stun! Consider yourself lucky, mines!')
                 #attack = True
                 #client.ChatSend('Theres no disabling me!')
@@ -151,33 +161,33 @@ while True:
             elif '!toggle' in cht['msg'].lower() and myMaster == cht['id']:
                 attack = not attack
                 if attack:
-                    client.ChatSend('Phasers set to Kill! Mines, watch out!')
+                    client.chat_send('Phasers set to Kill! Mines, watch out!')
                 else:
-                    client.ChatSend(
+                    client.chat_send(
                         'Phasers set to Stun! Consider yourself lucky, mines!')
 
             elif '!kill' in cht['msg'].lower() and myMaster == cht['id']:
                 targetPlayer = not targetPlayer
                 if targetPlayer:
-                    client.ChatSend('Now Targeting: ' + playerToTarget)
+                    client.chat_send('Now Targeting: ' + playerToTarget)
                 else:
-                    client.ChatSend('Player Targeting Disabled!')
+                    client.chat_send('Player Targeting Disabled!')
 
             elif '!newtarget' in cht['msg'].lower() and myMaster == cht['id']:
                 playerToTarget = cht['msg'].replace('!newtarget', '').strip()
-                client.ChatSend('Now Targeting: ' + playerToTarget)
+                client.chat_send('Now Targeting: ' + playerToTarget)
 
             elif '!updates' in cht['msg'].lower():
                 updates = not updates
                 if updates:
-                    client.ChatSend(
+                    client.chat_send(
                         'I shall now spam this clean chat log with useless messages!')
                 else:
-                    client.ChatSend('You are now free of my spam!')
+                    client.chat_send('You are now free of my spam!')
 
             elif '!stats' in cht['msg'].lower():
 
-                client.ChatSend('Disarmed {0} mines out of {1} remaining mines. \
+                client.chat_send('Disarmed {0} mines out of {1} remaining mines. \
                                  Current TPS is {2}. My UUID is: {3}.  \
                                  My current owner is: {4} ({5})' .format(deadMines,
                                                                          numMines,
@@ -196,9 +206,9 @@ while True:
         if event.key == 107:
             attack = not attack
             if attack:
-                client.ChatSend('Phasers set to Kill! Mines, watch out!')
+                client.chat_send('Phasers set to Kill! Mines, watch out!')
             else:
-                client.ChatSend(
+                client.chat_send(
                     'Phasers set to Stun! Consider yourself lucky, mines!')
         else:
             print event.key
@@ -219,12 +229,12 @@ while True:
 
                 if k == ourID:
                     if targetPlayer:
-                        tID = client.GetKey(playerToTarget)
+                        tID = client.get_key(playerToTarget)
                         # print 'TID', tID
                         closePos = (
                             200 - int(-playerDat[tID]['pos']['x'] / 50), 200 - int(-playerDat[tID]['pos']['y'] / 50))
                     else:
-                        closePos = client.getClosest(pos, projectiles)
+                        closePos = client.gat_closest(pos, projectiles)
                     shipAng = playerDat[k]['pos']['d']
                     ang = int(GetAngle(pos, closePos)) - 90
 
@@ -248,7 +258,7 @@ while True:
 
                     angC = int(Newang)
 
-                    nearPlan = client.getClosest(pos, pnbData)
+                    nearPlan = client.get_closest(pos, pnbData)
                     nearPlanDist = int(
                         math.hypot(pos[0] - nearPlan[0], pos[1] - nearPlan[1]))
 
@@ -264,13 +274,13 @@ while True:
                         math.hypot(pos[0] - closePos[0], pos[1] - closePos[1]))
 
                     if attack:
-                        client.MoveDegrees(angC, 0)
-                        client.MoveDegrees(angC, 1)
+                        client.move_degerees(angC, 0)
+                        client.move_degrees(angC, 1)
                         if dist < 10:
-                            client.Fire()
+                            client.fire()
                             GetAngle(pos, newPos)
 
-    except BaseException as e:
+    except AssertionError as e:
         print e
     for k in pnbData.keys():
 
@@ -297,7 +307,7 @@ while True:
         #client.ChatSend(str(numMines)+' Left!')
 
         if updates:
-            client.ChatSend('1 mine down! {0} left to go. This makes a total of {1} mines disarmed! {2}'.format(
+            client.chat_send('1 mine down! {0} left to go. This makes a total of {1} mines disarmed! {2}'.format(
                 numMines, deadMines, datetime.datetime.now()))
 
     window.fill(THECOLORS['white'])
@@ -328,8 +338,11 @@ while True:
         'TPS:' + str(int(clock.get_fps())), 1, THECOLORS['black']), (420, 325))
 
     try:
-        pygame.display.set_caption("T: %s M: %s C: %s" % (
-            playerToTarget, playerDat[ourID]['name'], client.GetName(myMaster)))
+        pygame.display.set_caption("T: %s M: %s C: %s" % (playerToTarget, playerDat[ourID]['name'], client.get_name(myMaster)))
     except:
         pass
+
+    print ourID
+    print playerDat
+    print client.get_name(myMaster)
     pygame.display.update()
