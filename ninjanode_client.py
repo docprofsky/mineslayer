@@ -21,18 +21,11 @@ class ninjanodeClient(object):
     # logging.basicConfig(level=logging.DEBUG)    #ENABLE THIS AT YOUR OWN
     # RISK!!! FLOODS THE CONSOLE WITH ALL TRANSMITTED/RECIEVED PACKETS!
 
-    # Set to true to enable automatic reconnection after a disconnect
-    reconnect = True
-    # stores wether the bot is enabled or not. This will set the default state
-    # when it first logs on
-    attack = True
-    updates = True  # if this is true, then we say statistics ingame
-
     # This is true if this is the first time connecting to the server
     firstConnect = False
     projectiles = {}  # dict storing all data about projectiles
 
-    def __init__(self, name):
+    def __init__(self, name, reconnect):
         # list that stores a log of all the chat events that have happened.
         self.chatLog = []
         self.pnbData = {}  # dict storing planet data

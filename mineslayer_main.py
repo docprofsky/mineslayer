@@ -65,6 +65,7 @@ eventMsgs = {'join': 'JOINED!!!',
 targetPlayer = True
 playerToTarget = 'docprofsky'
 silentStart = True
+reconnect = True
 
 
 def GetAngle(p1, p2):
@@ -89,7 +90,7 @@ if len(sys.argv) == 3:
 elif len(sys.argv) == 2:
     client = ninjanode_client.ninjanodeClient(sys.argv[1])
 else:
-    client = ninjanode_client.ninjanodeClient('!docprofsky')
+    client = ninjanode_client.ninjanodeClient('!docprofsky', reconnect)
 
 client.Connect()
 
