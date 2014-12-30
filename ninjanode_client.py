@@ -21,15 +21,17 @@ class ninjanodeClient(object):
     # logging.basicConfig(level=logging.DEBUG)    #ENABLE THIS AT YOUR OWN
     # RISK!!! FLOODS THE CONSOLE WITH ALL TRANSMITTED/RECIEVED PACKETS!
 
-    # This is true if this is the first time connecting to the server
-    firstConnect = False
-    projectiles = {}  # dict storing all data about projectiles
+
 
     def __init__(self, name, reconnect):
         # list that stores a log of all the chat events that have happened.
         self.chatLog = []
         self.pnbData = {}  # dict storing planet data
-        self.playerDat = {'d': 0}  # dict storing all data about players
+        self.playerDat = {}  # dict storing all data about players
+        self.projectiles = {}  # dict storing all data about projectiles
+
+        # This is true if this is the first time connecting to the server
+        firstConnect = False
 
         self.sio = socketIO_client.SocketIO(
             'ninjanode.tn42.com', 80, partial(self.EventHandler, self))
@@ -38,7 +40,7 @@ class ninjanodeClient(object):
                          'name': name,
                          'style': "c"}
 
-    def getClosest(self, coord, projectiles):
+    def get_closest(self, coord, projectiles):
         """
         returns closest coordinate to a coordinate (coord) from the list of coordinates (projectiles)
         """
@@ -59,13 +61,13 @@ class ninjanodeClient(object):
         except ValueError:
             return coord
 
-    def GetName(self, key):
+    def get_name(self, key):
         try:
             return playerDat[key]['name']
         except:
             return ''
 
-    def GetKey(self, name):
+    def get_key(self, name):
         try:
             for k in playerDat.keys():
                 if playerDat[k]['name'] == name:
@@ -73,46 +75,46 @@ class ninjanodeClient(object):
         except BaseException as er:
             return ''
 
-    def Connect(self):
+    def connect(self):
         self.sio.emit('shipstat', self.ShipInfo)
         self.sio.wait(0.001)
         self.firstConnect = True
 
-    def MoveForward(self, state):
+    def move_forward(self, state):
         self.sio.emit('key', {'s': int(state), 'c': "u"})
         self.sio.wait(0.001)
 
-    def MoveBackward(self, state):
+    def move_backward(self, state):
         self.sio.emit('key', {'s': int(state), 'c': "d"})
         self.sio.wait(0.001)
 
-    def MoveLeft(self, state):
+    def move_left(self, state):
         self.sio.emit('key', {'s': int(state), 'c': "l"})
         self.sio.wait(0.001)
 
-    def MoveRight(self, state):
+    def move_right(self, state):
         self.sio.emit('key', {'s': int(state), 'c': "r"})
         self.sio.wait(0.001)
 
-    def DropMine(self):
+    def drop_mine(self):
         self.sio.emit('key', {'s': 1, 'c': "s"})
         self.sio.wait(0.001)
         self.sio.emit('key', {'s': 0, 'c': "s"})
         self.sio.wait(0.001)
 
-    def Fire(self):
+    def fire(self):
         self.sio.emit('key', {'s': 1, 'c': "f"})
         self.sio.wait(0.001)
         self.sio.emit('key', {'s': 0, 'c': "f"})
         self.sio.wait(0.001)
 
-    def MoveDegrees(self, deg, state):
+    def move_degrees(self, deg, state):
         self.sio.emit('key', {'c': 'm',
                               's': state,
                               'd': deg})
         self.sio.wait(0.001)
 
-    def ChatSend(self, msg):
+    def chat_send(self, msg):
         self.sio.emit('chat', {'msg': str(msg)})
         self.sio.wait(0.001)
 
