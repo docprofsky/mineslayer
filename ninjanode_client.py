@@ -38,50 +38,6 @@ class ninjanodeClient(object):
                          'name': name,
                          'style': "c"}
 
-    # @staticmethod
-    # def get_instance(cls):
-    #     if cls.instance is None:
-    #         cls.instance = cls()
-    #     return cls
-
-    def on_chat(self, data):  # when new data arrives from the chat system
-        chatLog.append(data)  # add that data to the que
-
-    def on_shipstat(self, data):  # recieved info on ships
-        for k in data.keys():  # iterate through keys in recv'd data
-
-            if self.playerDat.has_key(k):
-                # if the player is already in the system, only overwrite
-                # the changes
-                self.playerDat[k].update(data[k])
-            else:
-                self.playerDat[k] = data[k]  # otherwise, overwrite it all!
-            # If the player needs tobe removed from memory
-            if data[k]['status'] == 'destroy':
-                self.playerDat.pop(k)
-
-    def on_projstat(self, data):  # updates on projectiles status
-        for k in data.keys():
-            # if the projectile is being created
-            if data[k]['status'] == 'create':
-                if projectiles.has_key(k):
-                    # if the projectile is already in the system, only
-                    # overwrite the changes
-                    projectiles[k].update(data[k])
-                else:
-                    # otherwise, overwrite it all!
-                    projectiles[k] = data[k]
-            else:
-                projectiles.pop(k)  # If we're not creating it, destroy it!
-
-    def on_projpos(self, data):  # on position update of projectiles
-        for k in data.keys():  # write new data to the dict
-            projectiles[k].update(data[k])
-
-    # This is only called once, on login, it gives data on PNBITS
-    def on_pnbitsstat(self, data):
-        self.pnbData = data  # just copy the data
-
     def getClosest(self, coord, projectiles):
         """
         returns closest coordinate to a coordinate (coord) from the list of coordinates (projectiles)
