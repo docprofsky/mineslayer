@@ -12,11 +12,13 @@ from functools import partial
 import datetime
 
 
-class ninjanodeClient:
+class ninjanodeClient(object):
 
     """
     Contains all the stuff needed for socketIO and a few random other things
     """
+
+    instance = None
 
     # logging.basicConfig(level=logging.DEBUG)    #ENABLE THIS AT YOUR OWN
     # RISK!!! FLOODS THE CONSOLE WITH ALL TRANSMITTED/RECIEVED PACKETS!
@@ -32,19 +34,24 @@ class ninjanodeClient:
     firstConnect = False
     projectiles = {}  # dict storing all data about projectiles
 
-
     def __init__(self, name):
         # list that stores a log of all the chat events that have happened.
         self.chatLog = []
-        pnbData = {}  # dict storing planet data
-        playerDat = {'d': 0}  # dict storing all data about players
+        self.pnbData = {}  # dict storing planet data
+        self.playerDat = {'d': 0}  # dict storing all data about players
 
         self.sio = socketIO_client.SocketIO(
-            'ninjanode.tn42.com', 80, self.EventHandler)
+            'ninjanode.tn42.com', 80, partial(self.EventHandler, self))
         self.sio.timeout_in_seconds = 0.001
         self.ShipInfo = {'status': "create",
                          'name': name,
                          'style': "c"}
+
+    # @staticmethod
+    # def get_instance(cls):
+    #     if cls.instance is None:
+    #         cls.instance = cls()
+    #     return cls
 
     def on_chat(self, data):  # when new data arrives from the chat system
         chatLog.append(data)  # add that data to the que
@@ -168,6 +175,10 @@ class ninjanodeClient:
         Handles events from socketIO
         """
 
+        def __init__(self,  updateLocation, *args, **kwargs):
+            super(ninjanodeClient.EventHandler, self).__init__(*args, **kwargs)
+            self.updateLocation = updateLocation
+
         def on_connect(self):
             # When we connect to the server. Simply print a debug message to
             # console
@@ -182,51 +193,48 @@ class ninjanodeClient:
         def on_pos(self, data):
             # iterate through all the keys in the rcieved data
             for k in data.keys():
-                if self.playerDat.has_key(k):
+                if self.updateLocation.playerDat.has_key(k):
                     # if the player is already in the system, only overwrite
                     # the changes
-                    self.playerDat[k]['pos'].update(data[k])
+                    self.updateLocation.playerDat[k]['pos'].update(data[k])
                 else:
                     # otherwise, overwrite it all!
-                    self.playerDat[k]['pos'] = data[k]
+                    self.updateLocation.playerDat[k]['pos'] = data[k]
 
         def on_chat(self, data):  # when new data arrives from the chat system
-            chatLog.append(data)  # add that data to the que
+            self.updateLocation.chatLog.append(data)  # add that data to the que
 
         def on_shipstat(self, data):  # recieved info on ships
-            global playerDat  # globalize all the things!
-
             for k in data.keys():  # iterate through keys in recv'd data
 
-                if playerDat.has_key(k):
+                if self.updateLocation.playerDat.has_key(k):
                     # if the player is already in the system, only overwrite
                     # the changes
-                    playerDat[k].update(data[k])
+                    self.updateLocation.playerDat[k].update(data[k])
                 else:
-                    playerDat[k] = data[k]  # otherwise, overwrite it all!
+                    self.updateLocation.playerDat[k] = data[k]  # otherwise, overwrite it all!
                 # If the player needs tobe removed from memory
                 if data[k]['status'] == 'destroy':
-                    playerDat.pop(k)
+                    self.updateLocation.playerDat.pop(k)
 
         def on_projstat(self, data):  # updates on projectiles status
             for k in data.keys():
                 # if the projectile is being created
                 if data[k]['status'] == 'create':
-                    if projectiles.has_key(k):
+                    if self.updateLocation.projectiles.has_key(k):
                         # if the projectile is already in the system, only
                         # overwrite the changes
-                        projectiles[k].update(data[k])
+                        self.updateLocation.projectiles[k].update(data[k])
                     else:
                         # otherwise, overwrite it all!
-                        projectiles[k] = data[k]
+                        self.updateLocation.projectiles[k] = data[k]
                 else:
-                    projectiles.pop(k)  # If we're not creating it, destroy it!
+                    self.updateLocation.projectiles.pop(k)  # If we're not creating it, destroy it!
 
         def on_projpos(self, data):  # on position update of projectiles
             for k in data.keys():  # write new data to the dict
-                projectiles[k].update(data[k])
+                self.updateLocation.projectiles[k].update(data[k])
 
         # This is only called once, on login, it gives data on PNBITS
         def on_pnbitsstat(self, data):
-            global pnbData
             pnbData = data  # just copy the data into a global variable
