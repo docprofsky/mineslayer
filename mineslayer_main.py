@@ -54,6 +54,7 @@ velocity = {'x': 0,
             'l': 0}
 newPos = (0, 0)
 closePos = newPos
+pos = (0, 0)
 
 # messages printed to console on certain events.
 eventMsgs = {'join': 'JOINED!!!',
@@ -85,10 +86,10 @@ def GetNextPos(angle, posX, posY, velX, velY, length, sec=1):
     return (X, Y)
 
 if len(sys.argv) == 3:
-    client = ninjanode_client.ninjanodeClient(sys.argv[1])
+    client = ninjanode_client.ninjanodeClient(sys.argv[1], reconnect)
     playerToTarget = sys.argv[2]
 elif len(sys.argv) == 2:
-    client = ninjanode_client.ninjanodeClient(sys.argv[1])
+    client = ninjanode_client.ninjanodeClient(sys.argv[1], reconnect)
 else:
     client = ninjanode_client.ninjanodeClient('!docprofsky', reconnect)
 
@@ -108,6 +109,10 @@ fonts = pygame.font.SysFont('console', 8, True)
 while True:
     client.sio.wait(0.001)
     clock.tick(0)
+
+    chatLog = client.chatLog
+    pnbData = client.pnbData
+    playerDat = client.playerDat
 
     client.Fire()
     client.DropMine()
