@@ -18,8 +18,6 @@ class ninjanodeClient(object):
     Contains all the stuff needed for socketIO and a few random other things
     """
 
-    instance = None
-
     # logging.basicConfig(level=logging.DEBUG)    #ENABLE THIS AT YOUR OWN
     # RISK!!! FLOODS THE CONSOLE WITH ALL TRANSMITTED/RECIEVED PACKETS!
 
